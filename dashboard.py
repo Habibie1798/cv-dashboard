@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Ganti URL di bawah dengan endpoint Webhook n8n kamu!
-N8N_URL = "https://your-n8n-domain/webhook/YOUR_ENDPOINT"
+N8N_URL = "https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer"
 
 st.title("Dashboard Hasil CV Screening")
 
