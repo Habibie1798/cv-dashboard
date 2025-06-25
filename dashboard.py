@@ -1,32 +1,32 @@
 import streamlit as st
 import requests
 
-# Ganti URL di bawah dengan endpoint Webhook n8n kamu!
 N8N_URL = "https://talentdna.lintasarta.net/n8n/webhook/cv-analyzer"
 
 st.title("Dashboard Hasil CV Screening")
 
-# (Opsional) Bisa pakai text_input kalau endpoint dynamic
-# N8N_URL = st.text_input("Masukkan URL endpoint:", N8N_URL)
+uploaded_file = st.file_uploader("Upload CV (PDF)", type="pdf")
 
-# Ambil data dari n8n Webhook
-try:
-    response = requests.get(N8N_URL)
-    data = response.json()
-    st.success("Data berhasil diambil!")
+if uploaded_file is not None:
+    files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
+    with st.spinner("Mengirim file ke n8n..."):
+        response = requests.post(N8N_URL, files=files)
+        try:
+            data = response.json()
+            st.success("Data berhasil diambil!")
+            st.write("RAW JSON:", data)  # Debug: cek struktur
 
-    # Tampilkan data
-    st.header("Detail Kandidat")
-    st.write(f"**Nama:** {data['full_name']}")
-    st.write(f"**Score Kecocokan:** {data['match_score']}")
-    st.write(f"**Summary:** {data['summary']}")
-
-    st.subheader("Skills")
-    st.write(", ".join(data["skills"]))
-
-    # Visualisasi Score (contoh: gauge atau bar)
-    st.progress(int(data['match_score']))
-
-except Exception as e:
-    st.error(f"Error mengambil data: {e}")
-
+            # --- cek dan tampilkan data sesuai struktur response dari workflow kamu
+            if isinstance(data, list):
+                data = data[0]
+            st.header("Detail Kandidat")
+            st.write(f"**Nama:** {data.get('full_name', '-')}")
+            st.write(f"**Score Kecocokan:** {data.get('match_score', '-')}")
+            st.write(f"**Summary:** {data.get('summary', '-')}")
+            st.subheader("Skills")
+            st.write(", ".join(data.get("skills", [])))
+            st.progress(int(data.get('match_score', 0)))
+        except Exception as e:
+            st.error(f"Error mengambil data: {e}")
+else:
+    st.info("Silakan upload file CV untuk mulai screening.")
