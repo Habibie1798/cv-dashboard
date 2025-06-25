@@ -14,18 +14,31 @@ if uploaded_file is not None:
         try:
             data = response.json()
             st.success("Data berhasil diambil!")
-            st.write("RAW JSON:", data)  # Debug: cek struktur
+            st.write("RAW JSON:", data)  # Untuk debugging
 
-            # --- cek dan tampilkan data sesuai struktur response dari workflow kamu
-            if isinstance(data, list):
-                data = data[0]
             st.header("Detail Kandidat")
             st.write(f"**Nama:** {data.get('full_name', '-')}")
-            st.write(f"**Score Kecocokan:** {data.get('match_score', '-')}")
+            st.write(f"**Domisili:** {data.get('domicile', '-')}")
+            st.write(f"**No. HP:** {data.get('phone_number', '-')}")
+            st.write(f"**Email:** {data.get('email', '-')}")
             st.write(f"**Summary:** {data.get('summary', '-')}")
+
             st.subheader("Skills")
-            st.write(", ".join(data.get("skills", [])))
-            st.progress(int(data.get('match_score', 0)))
+            # skills: dict of skill_name: bool
+            skills_true = [k.title() for k, v in data["skills"].items() if v]
+            skills_false = [k.title() for k, v in data["skills"].items() if not v]
+            st.write("✅ " + ", ".join(skills_true))
+            if skills_false:
+                st.write("❌ " + ", ".join(skills_false))
+
+            st.subheader("Skor Pengalaman & Pendidikan")
+            exp = data.get("experience_score", {})
+            for aspek in exp:
+                st.write(
+                    f"**{aspek.title()} Score:** {exp[aspek].get(aspek + '_score', '-')}"
+                )
+                st.caption(exp[aspek].get(aspek + "_reason", "-"))
+
         except Exception as e:
             st.error(f"Error mengambil data: {e}")
 else:
