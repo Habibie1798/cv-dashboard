@@ -8,7 +8,7 @@ st.title("Dashboard Hasil CV Screening")
 uploaded_file = st.file_uploader("Upload CV (PDF)", type="pdf")
 
 if uploaded_file is not None:
-    files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
+    files = {"cv-file": (uploaded_file.name, uploaded_file, "application/pdf")}
     with st.spinner("Mengirim file ke n8n..."):
         response = requests.post(N8N_URL, files=files)
         try:
