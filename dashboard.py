@@ -10,7 +10,7 @@ job_role = st.text_input("Job Role")
 
 if st.button("Screening"):
     if uploaded_file is not None:
-        files = {"data": uploaded_file}
+        files = {"cv-file": uploaded_file}
         data = {
             "ipk_min": ipk,
             "jurusan_hr": jurusan,
