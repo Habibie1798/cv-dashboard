@@ -10,19 +10,23 @@ job_role = st.text_input("Job Role")
 
 if st.button("Screening"):
     if uploaded_file is not None:
-        files = {"cv-file": uploaded_file}
+        files = {
+            "cv-file": (uploaded_file.name, uploaded_file, "application/pdf")
+        }
         data = {
             "ipk_min": ipk,
             "jurusan_hr": jurusan,
             "job_role": job_role
         }
-        # Ganti URL di bawah dengan URL webhook n8n kamu
-        res = requests.post("https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer", files=files, data=data)
+        res = requests.post(
+            "https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer",
+            files=files, data=data
+        )
         if res.ok:
             hasil = res.json()
             st.success("Hasil Screening:")
             st.write(hasil.get("hasil_screening", hasil))
         else:
-            st.error("Gagal screening. Coba lagi.")
+            st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
     else:
         st.warning("Mohon upload file CV dulu.")
