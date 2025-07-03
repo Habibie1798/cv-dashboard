@@ -3,13 +3,7 @@ import requests
 
 st.title("Upload CV & Screening")
 
-# List jurusan awal
-jurusan_list_awal = [
-    "Business Management", "Accounting", "Computer Science", "Engineering",
-    "Law", "Psychology", "Communication"
-]
-
-# State untuk jurusan
+# Inisialisasi session state
 if "jurusan_final" not in st.session_state:
     st.session_state["jurusan_final"] = []
 if "other_mode" not in st.session_state:
@@ -17,7 +11,12 @@ if "other_mode" not in st.session_state:
 if "jurusan_manual" not in st.session_state:
     st.session_state["jurusan_manual"] = ""
 
-# Pilih dari list (multi)
+jurusan_list_awal = [
+    "Business Management", "Accounting", "Computer Science", "Engineering",
+    "Law", "Psychology", "Communication"
+]
+
+# Multi-select dengan tambahan Other
 jurusan_pilihan = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, klik 'Other' jika jurusan tidak ada di list)",
     options=jurusan_list_awal + ["Other (isi manual)"],
@@ -25,26 +24,24 @@ jurusan_pilihan = st.multiselect(
     key="jurusan_multi"
 )
 
-# Jika pilih Other (isi manual), munculkan input
+# Jika pilih Other, input jurusan manual
 if "Other (isi manual)" in jurusan_pilihan or st.session_state["other_mode"]:
     st.session_state["other_mode"] = True
     jurusan_manual = st.text_input("Masukkan jurusan manual, lalu tekan Enter", key="jurusan_manual")
-    # Jika ada input, tambahkan ke list lalu reset mode
     if jurusan_manual:
+        # Tambah ke jurusan_final hanya jika belum ada
         if jurusan_manual not in st.session_state["jurusan_final"]:
             st.session_state["jurusan_final"].append(jurusan_manual)
         st.session_state["other_mode"] = False
-        st.session_state["jurusan_manual"] = ""
-        st.experimental_set_query_params(**{})  # mini refresh
-        st.stop()
+        # Reset field input, PENTING: Gunakan .clear_on_submit pada st.text_input!
+        st.text_input("Masukkan jurusan manual, lalu tekan Enter", value="", key="jurusan_manual_clear", disabled=True)
+        st.stop()  # Hindari update session setelah ini
+
 else:
-    # Update list kalau tidak sedang mode other
-    st.session_state["jurusan_final"] = jurusan_pilihan
+    # Hanya update jika tidak dalam mode 'other'
+    st.session_state["jurusan_final"] = [j for j in jurusan_pilihan if j != "Other (isi manual)"]
 
-# Tampilkan jurusan final (hanya untuk cek, bisa dihapus)
-# st.write("Jurusan yang dipilih:", st.session_state["jurusan_final"])
-
-# Input lain seperti sebelumnya...
+# Input lain seperti sebelumnya
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
