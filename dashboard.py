@@ -1,54 +1,29 @@
 import streamlit as st
+from streamlit_tags import st_tags
 import requests
 
 st.title("Upload CV & Screening")
 
-# --- Inisialisasi session state
-if "jurusan_options" not in st.session_state:
-    st.session_state.jurusan_options = [
-        "Business Management", "Accounting", "Computer Science", "Engineering",
-        "Law", "Psychology", "Communication", "Other (isi manual)"
-    ]
-if "jurusan_selected" not in st.session_state:
-    st.session_state.jurusan_selected = []
-if "last_manual_key" not in st.session_state:
-    st.session_state.last_manual_key = 0
+# --- List jurusan awal
+JURUSAN_AWAL = [
+    "Business Management", "Accounting", "Computer Science", "Engineering",
+    "Law", "Psychology", "Communication"
+]
 
-# --- Multiselect jurusan
-jurusan_selected = st.multiselect(
-    "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
-    options=st.session_state.jurusan_options,
-    default=st.session_state.jurusan_selected,
-    key="jurusan_multi"
+if "jurusan_list" not in st.session_state:
+    st.session_state.jurusan_list = []
+
+jurusan_list = st_tags(
+    label="Jurusan (boleh lebih dari satu, boleh input manual!)",
+    text="Ketik jurusan lalu tekan Enter. Atau pilih dari dropdown.",
+    value=st.session_state.jurusan_list,
+    suggestions=JURUSAN_AWAL,
+    maxtags=10,
+    key="jurusan_tags"
 )
 
-# --- Tambah jurusan manual JIKA "Other (isi manual)" dipilih
-if "Other (isi manual)" in jurusan_selected:
-    key_manual = f"jurusan_manual_{st.session_state.last_manual_key}"
-    jurusan_manual = st.text_input(
-        "Masukkan jurusan lain, lalu klik Tambah/Enter",
-        key=key_manual
-    )
-    if st.button("Tambah jurusan manual"):
-        jur_baru = jurusan_manual.strip()
-        if jur_baru and (jur_baru not in st.session_state.jurusan_options) and jur_baru != "Other (isi manual)":
-            st.session_state.jurusan_options.insert(
-                len(st.session_state.jurusan_options) - 1, jur_baru
-            )
-            # Update selected: hapus 'Other', tambah jur_baru
-            new_selected = [j for j in jurusan_selected if j != "Other (isi manual)"]
-            new_selected.append(jur_baru)
-            st.session_state.jurusan_selected = new_selected
-            st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
-            st.session_state.last_manual_key += 1  # Ganti key input, field jadi auto kosong
-        elif not jur_baru:
-            st.warning("Input jurusan tidak boleh kosong.")
-        else:
-            st.warning("Jurusan sudah ada di daftar.")
-
-# --- Sinkronisasi selection (biar multiselect selalu update)
-if set(jurusan_selected) != set(st.session_state.jurusan_selected):
-    st.session_state.jurusan_selected = jurusan_selected
+# Simpan hasil ke session state
+st.session_state.jurusan_list = jurusan_list
 
 # --- Upload CV
 uploaded_file = st.file_uploader("Upload CV (PDF)", type=["pdf"])
@@ -78,7 +53,7 @@ nilai_toefl = st.text_input("Nilai TOEFL Minimal (opsional)")
 
 if st.button("Screening", key="btn_screening"):
     if uploaded_file is not None:
-        jurusan_final = st.session_state.jurusan_selected
+        jurusan_final = st.session_state.jurusan_list
         files = {
             "cv-file": (uploaded_file.name, uploaded_file, "application/pdf")
         }
