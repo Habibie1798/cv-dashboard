@@ -8,13 +8,29 @@ uploaded_file = st.file_uploader("Upload CV (PDF)")
 # --- IPK (bisa klik panah, default 3.00, min 0, max 4, step 0.01)
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 
-# --- Jurusan (dropdown + custom)
+# --- Jurusan (multi-select + custom)
 jurusan_list = [
     "Business Management", "Accounting", "Computer Science", "Engineering",
-    "Law", "Psychology", "Communication", "Other"
+    "Law", "Psychology", "Communication", "Other (isi manual)"
 ]
-jurusan_select = st.selectbox("Jurusan", jurusan_list)
-jurusan = st.text_input("Jurusan (isi jika pilih 'Other')") if jurusan_select == "Other" else jurusan_select
+jurusan_multi = st.multiselect(
+    "Jurusan (bisa pilih lebih dari 1)",
+    jurusan_list,
+    default=[]
+)
+
+# Input manual jika pilih 'Other (isi manual)'
+jurusan_lain = ""
+if "Other (isi manual)" in jurusan_multi:
+    jurusan_lain = st.text_input("Tambahkan jurusan lain (pisahkan koma jika lebih dari 1)")
+
+# Gabungkan semua jurusan ke satu list
+jurusan_hr = [j for j in jurusan_multi if j != "Other (isi manual)"]
+if jurusan_lain:
+    jurusan_hr += [j.strip() for j in jurusan_lain.split(",") if j.strip()]
+
+# Ubah ke string (biar gampang, nanti di n8n bisa split atau langsung pakai LLM prompt)
+jurusan_hr_str = ", ".join(jurusan_hr)
 
 # --- Job Role (dropdown + custom)
 jobrole_list = [
@@ -45,7 +61,7 @@ if st.button("Screening"):
         }
         data = {
             "ipk_min": str(ipk),
-            "jurusan_hr": jurusan,
+            "jurusan_hr": jurusan_hr_str,   # multi-jurusan dipisah koma
             "job_role": job_role,
             "min_years_exp": str(min_years_exp),
             "max_age": str(max_age),
