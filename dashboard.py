@@ -3,51 +3,60 @@ import requests
 
 st.title("Upload CV & Screening")
 
-# --- List jurusan dan session state
-JURUSAN_DEFAULT = [
-    "Business Management", "Accounting", "Computer Science", "Engineering",
-    "Law", "Psychology", "Communication"
-]
-
+# --- State dasar
 if "jurusan_options" not in st.session_state:
-    st.session_state.jurusan_options = JURUSAN_DEFAULT.copy()
+    st.session_state.jurusan_options = [
+        "Business Management", "Accounting", "Computer Science", "Engineering",
+        "Law", "Psychology", "Communication", "Other (isi manual)"
+    ]
 if "jurusan_selected" not in st.session_state:
     st.session_state.jurusan_selected = []
-if "jurusan_manual_list" not in st.session_state:
-    st.session_state.jurusan_manual_list = []
 
-# --- Checkbox list jurusan
-st.subheader("Pilih Jurusan")
-selected_jurusan = []
-for jurusan in st.session_state.jurusan_options:
-    cek = st.checkbox(jurusan, key=f"cek_{jurusan}", value=jurusan in st.session_state.jurusan_selected)
-    if cek:
-        selected_jurusan.append(jurusan)
+# --- Dropdown multiselect jurusan
+jurusan_selected = st.multiselect(
+    "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
+    options=st.session_state.jurusan_options,
+    default=st.session_state.jurusan_selected,
+    key="jurusan_multi"
+)
 
-# --- Tambah jurusan manual
-with st.expander("Tambah Jurusan Lain (Manual)"):
-    jurusan_manual = st.text_input("Masukkan jurusan lain", key="jurusan_manual_input", value="")
-    if st.button("Tambah jurusan manual"):
+# --- Input manual jurusan jika pilih "Other (isi manual)"
+if "Other (isi manual)" in jurusan_selected:
+    jurusan_manual = st.text_input("Masukkan jurusan lain, lalu klik Tambah/Enter", key="jurusan_manual")
+    tambah = st.button("Tambah jurusan manual", key="btn_tambah")
+    if tambah and jurusan_manual.strip():
         jur_baru = jurusan_manual.strip()
-        if jur_baru and jur_baru not in st.session_state.jurusan_options:
-            st.session_state.jurusan_options.append(jur_baru)
-            st.session_state.jurusan_manual_list.append(jur_baru)
+        # Cegah duplikat
+        if jur_baru not in st.session_state.jurusan_options and jur_baru != "Other (isi manual)":
+            # Ganti "Other (isi manual)" di pilihan dengan jurusan baru
+            st.session_state.jurusan_options.insert(
+                st.session_state.jurusan_options.index("Other (isi manual)"),
+                jur_baru
+            )
+            st.session_state.jurusan_options.remove("Other (isi manual)")
+            # Ganti "Other (isi manual)" di selected jadi jurusan baru
+            new_selected = [j for j in jurusan_selected if j != "Other (isi manual)"]
+            new_selected.append(jur_baru)
+            st.session_state.jurusan_selected = new_selected
             st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
-            st.experimental_rerun()
+            # Clear manual input untuk berikutnya
+            st.session_state["jurusan_manual"] = ""
+            st.experimental_set_query_params(**st.session_state) # Pemicu rerun manual, tidak error
+            st.stop()
         elif jur_baru in st.session_state.jurusan_options:
-            st.warning("Jurusan sudah ada di list.")
+            st.warning("Jurusan sudah ada di daftar.")
         else:
             st.warning("Input jurusan tidak boleh kosong.")
 
-# --- Simpan selection jurusan di session state
-st.session_state.jurusan_selected = selected_jurusan
+# --- Update session_state jurusan_selected biar sync
+if set(jurusan_selected) != set(st.session_state.jurusan_selected):
+    st.session_state.jurusan_selected = jurusan_selected
 
 # --- Upload CV
 uploaded_file = st.file_uploader("Upload CV (PDF)", type=["pdf"])
 
-# --- Input lain
+# --- Input lain-lain
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
-
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
     "HR", "Marketing", "Other"
