@@ -3,41 +3,48 @@ import requests
 
 st.title("Upload CV & Screening")
 
-# Inisialisasi jurusan list (local variable, bukan session_state)
+# List jurusan awal
 jurusan_list_awal = [
     "Business Management", "Accounting", "Computer Science", "Engineering",
-    "Law", "Psychology", "Communication", "Other (isi manual)"
+    "Law", "Psychology", "Communication"
 ]
 
-# Tempat untuk menampung hasil final jurusan
+# State untuk jurusan
 if "jurusan_final" not in st.session_state:
     st.session_state["jurusan_final"] = []
+if "other_mode" not in st.session_state:
+    st.session_state["other_mode"] = False
+if "jurusan_manual" not in st.session_state:
+    st.session_state["jurusan_manual"] = ""
 
-# Multiselect untuk jurusan
+# Pilih dari list (multi)
 jurusan_pilihan = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, klik 'Other' jika jurusan tidak ada di list)",
-    options=jurusan_list_awal,
+    options=jurusan_list_awal + ["Other (isi manual)"],
+    default=st.session_state["jurusan_final"] if not st.session_state["other_mode"] else [],
+    key="jurusan_multi"
 )
 
-# Input manual jika Other dipilih
-if "Other (isi manual)" in jurusan_pilihan:
-    jurusan_manual = st.text_input("Masukkan jurusan manual lalu tekan Enter", key="input_jurusan_manual")
-    # Jika user sudah isi jurusan manual dan tekan Enter
+# Jika pilih Other (isi manual), munculkan input
+if "Other (isi manual)" in jurusan_pilihan or st.session_state["other_mode"]:
+    st.session_state["other_mode"] = True
+    jurusan_manual = st.text_input("Masukkan jurusan manual, lalu tekan Enter", key="jurusan_manual")
+    # Jika ada input, tambahkan ke list lalu reset mode
     if jurusan_manual:
-        # Masukkan ke hasil final (dan hapus "Other (isi manual)")
-        jurusan_final = [j for j in jurusan_pilihan if j != "Other (isi manual)"]
-        if jurusan_manual not in jurusan_final:
-            jurusan_final.append(jurusan_manual)
-        st.session_state["jurusan_final"] = jurusan_final
-        # Clear input dan multiselect
-        st.experimental_rerun()
-    else:
-        # Jika user belum isi manual, jangan update hasil final
-        st.session_state["jurusan_final"] = [j for j in jurusan_pilihan if j != "Other (isi manual)"]
+        if jurusan_manual not in st.session_state["jurusan_final"]:
+            st.session_state["jurusan_final"].append(jurusan_manual)
+        st.session_state["other_mode"] = False
+        st.session_state["jurusan_manual"] = ""
+        st.experimental_set_query_params(**{})  # mini refresh
+        st.stop()
 else:
+    # Update list kalau tidak sedang mode other
     st.session_state["jurusan_final"] = jurusan_pilihan
 
-# ------------ Input lain
+# Tampilkan jurusan final (hanya untuk cek, bisa dihapus)
+# st.write("Jurusan yang dipilih:", st.session_state["jurusan_final"])
+
+# Input lain seperti sebelumnya...
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
@@ -45,7 +52,6 @@ jobrole_list = [
 ]
 job_role_select = st.selectbox("Job Role", jobrole_list)
 job_role = st.text_input("Job Role (isi jika pilih 'Other')") if job_role_select == "Other" else job_role_select
-
 lokasi_list = [
     "Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Remote", "Other"
 ]
@@ -59,7 +65,6 @@ skill_wajib = st.text_input("Skill Wajib (opsional, pisahkan koma)")
 nilai_toefl = st.text_input("Nilai TOEFL Minimal (opsional)")
 uploaded_file = st.file_uploader("Upload CV (PDF)")
 
-# ------------ BUTTON submit
 if st.button("Screening"):
     if uploaded_file is not None:
         files = {
@@ -88,5 +93,3 @@ if st.button("Screening"):
             st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
     else:
         st.warning("Mohon upload file CV dulu.")
-
-# ------------ TIDAK ADA OUTPUT jurusan yang akan di-screening!
