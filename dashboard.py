@@ -3,58 +3,49 @@ import requests
 
 st.title("Upload CV & Screening")
 
-uploaded_file = st.file_uploader("Upload CV (PDF)")
+# --------- Session State untuk list jurusan
+if "jurusan_selected" not in st.session_state:
+    st.session_state["jurusan_selected"] = []
 
-# List jurusan utama + Other
+# Pilihan jurusan awal
 jurusan_list = [
     "Business Management", "Accounting", "Computer Science", "Engineering",
     "Law", "Psychology", "Communication", "Other (isi manual)"
 ]
 
-if "jurusan_selected" not in st.session_state:
-    st.session_state["jurusan_selected"] = []
-if "show_manual_jurusan" not in st.session_state:
-    st.session_state["show_manual_jurusan"] = False
-
-# Step 1: Multiselect
-jurusan_selected = st.multiselect(
+# Multiselect jurusan (tanpa duplicate manual)
+jurusan_pilihan = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, klik 'Other' jika jurusan tidak ada di list)",
     options=jurusan_list,
-    default=st.session_state["jurusan_selected"]
+    default=st.session_state["jurusan_selected"],
+    key="jurusan_multi"
 )
 
-# Step 2: Deteksi klik "Other"
-if "Other (isi manual)" in jurusan_selected and not st.session_state["show_manual_jurusan"]:
-    st.session_state["show_manual_jurusan"] = True
-
-# Step 3: Input manual jika pilih Other
-if st.session_state["show_manual_jurusan"]:
+# Jika "Other (isi manual)" dipilih
+if "Other (isi manual)" in jurusan_pilihan:
     jurusan_manual = st.text_input("Masukkan jurusan manual, lalu tekan Enter")
-
-    # Saat user input jurusan manual dan tekan Enter (bukan kosong)
     if jurusan_manual:
-        # Tambah ke list jurusan (pastikan tidak duplikat)
-        st.session_state["jurusan_selected"] = [
-            j for j in jurusan_selected if j != "Other (isi manual)"
-        ] + [jurusan_manual]
-        # Reset input manual & kolomnya hilang
-        st.session_state["show_manual_jurusan"] = False
+        # Masukkan ke list jurusan_selected kalau belum ada
+        jurusan_all = [j for j in jurusan_pilihan if j != "Other (isi manual)"]
+        if jurusan_manual not in jurusan_all:
+            jurusan_all.append(jurusan_manual)
+            # Update session state, buang "Other (isi manual)"
+            st.session_state["jurusan_selected"] = jurusan_all
+            st.session_state["jurusan_multi"] = jurusan_all
+        # Reset input field & buang "Other (isi manual)"
         st.experimental_rerun()
-
 else:
-    # Jika Other tidak terpilih, simpan jurusan yang ada
-    st.session_state["jurusan_selected"] = [j for j in jurusan_selected if j != "Other (isi manual)"]
+    # Update jurusan_selected jika tanpa manual
+    st.session_state["jurusan_selected"] = jurusan_pilihan
 
-# --- Tampilkan list jurusan final yang akan di-screening
-st.markdown("#### Jurusan yang akan di-screening:")
-st.write(st.session_state["jurusan_selected"])
+# Tampilkan jurusan yang akan di-screening (tanpa debug JSON)
+if st.session_state["jurusan_selected"]:
+    st.markdown("#### Jurusan yang akan di-screening:")
+    for j in st.session_state["jurusan_selected"]:
+        st.write(f"- {j}")
 
-# --- Lanjut field lain seperti sebelumnya ---
-ipk = st.number_input(
-    "IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f"
-)
-
-# Job Role
+# --------- Form input lain (singkat saja, lanjutkan seperti sebelumnya)
+ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
     "HR", "Marketing", "Other"
@@ -62,7 +53,6 @@ jobrole_list = [
 job_role_select = st.selectbox("Job Role", jobrole_list)
 job_role = st.text_input("Job Role (isi jika pilih 'Other')") if job_role_select == "Other" else job_role_select
 
-# Lokasi
 lokasi_list = [
     "Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Remote", "Other"
 ]
@@ -71,17 +61,17 @@ lokasi = st.text_input("Lokasi (isi jika pilih 'Other', boleh kosong)", value=""
 
 min_years_exp = st.number_input("Minimal Pengalaman Kerja (tahun)", min_value=0, max_value=50, value=0, step=1)
 max_age = st.number_input("Usia Maksimal", min_value=0, max_value=100, value=35, step=1)
-
 sertifikasi_wajib = st.text_input("Sertifikasi Wajib (opsional, pisahkan koma)")
 skill_wajib = st.text_input("Skill Wajib (opsional, pisahkan koma)")
 nilai_toefl = st.text_input("Nilai TOEFL Minimal (opsional)")
+
+uploaded_file = st.file_uploader("Upload CV (PDF)")
 
 if st.button("Screening"):
     if uploaded_file is not None:
         files = {
             "cv-file": (uploaded_file.name, uploaded_file, "application/pdf")
         }
-        # Kirim list jurusan final, join pakai koma
         data = {
             "ipk_min": str(ipk),
             "jurusan_hr": ", ".join(st.session_state["jurusan_selected"]),
@@ -105,3 +95,4 @@ if st.button("Screening"):
             st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
     else:
         st.warning("Mohon upload file CV dulu.")
+
