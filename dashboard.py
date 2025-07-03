@@ -13,38 +13,28 @@ jurusan_list = [
     "Law", "Psychology", "Communication", "Other (isi manual)"
 ]
 
-# Multiselect jurusan (tanpa duplicate manual)
+# Multiselect jurusan (pakai session state untuk menampung hasil akhir)
 jurusan_pilihan = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, klik 'Other' jika jurusan tidak ada di list)",
     options=jurusan_list,
-    default=st.session_state["jurusan_selected"],
-    key="jurusan_multi"
+    default=st.session_state["jurusan_selected"]
 )
 
 # Jika "Other (isi manual)" dipilih
 if "Other (isi manual)" in jurusan_pilihan:
-    jurusan_manual = st.text_input("Masukkan jurusan manual, lalu tekan Enter")
+    jurusan_manual = st.text_input("Masukkan jurusan manual, lalu tekan Enter", key="manual_input")
     if jurusan_manual:
-        # Masukkan ke list jurusan_selected kalau belum ada
+        # Gabungkan ke list dan hilangkan "Other (isi manual)"
         jurusan_all = [j for j in jurusan_pilihan if j != "Other (isi manual)"]
         if jurusan_manual not in jurusan_all:
             jurusan_all.append(jurusan_manual)
-            # Update session state, buang "Other (isi manual)"
             st.session_state["jurusan_selected"] = jurusan_all
-            st.session_state["jurusan_multi"] = jurusan_all
-        # Reset input field & buang "Other (isi manual)"
+        # Hapus isi text input setelah enter
         st.experimental_rerun()
 else:
-    # Update jurusan_selected jika tanpa manual
     st.session_state["jurusan_selected"] = jurusan_pilihan
 
-# Tampilkan jurusan yang akan di-screening (tanpa debug JSON)
-if st.session_state["jurusan_selected"]:
-    st.markdown("#### Jurusan yang akan di-screening:")
-    for j in st.session_state["jurusan_selected"]:
-        st.write(f"- {j}")
-
-# --------- Form input lain (singkat saja, lanjutkan seperti sebelumnya)
+# --------- Form input lain
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
@@ -64,7 +54,6 @@ max_age = st.number_input("Usia Maksimal", min_value=0, max_value=100, value=35,
 sertifikasi_wajib = st.text_input("Sertifikasi Wajib (opsional, pisahkan koma)")
 skill_wajib = st.text_input("Skill Wajib (opsional, pisahkan koma)")
 nilai_toefl = st.text_input("Nilai TOEFL Minimal (opsional)")
-
 uploaded_file = st.file_uploader("Upload CV (PDF)")
 
 if st.button("Screening"):
@@ -95,4 +84,3 @@ if st.button("Screening"):
             st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
     else:
         st.warning("Mohon upload file CV dulu.")
-
