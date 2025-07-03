@@ -33,18 +33,14 @@ if "Other (isi manual)" in jurusan_selected:
     if submit_manual and jurusan_manual.strip():
         # Cek tidak duplikat di opsi maupun di terpilih
         if jurusan_manual.strip() not in st.session_state["jurusan_options"]:
-            # Masukkan ke opsi sebelum "Other (isi manual)"
             idx = st.session_state["jurusan_options"].index("Other (isi manual)")
             st.session_state["jurusan_options"].insert(idx, jurusan_manual.strip())
-        # Tambah ke pilihan terpilih kalau belum ada
         if jurusan_manual.strip() not in st.session_state["jurusan_selected"]:
             st.session_state["jurusan_selected"].append(jurusan_manual.strip())
-        # Hilangkan "Other (isi manual)" dari selected
         if "Other (isi manual)" in st.session_state["jurusan_selected"]:
             st.session_state["jurusan_selected"].remove("Other (isi manual)")
-        st.experimental_set_query_params(**st.session_state)
         st.success(f"Jurusan '{jurusan_manual.strip()}' berhasil ditambahkan!")
-        st.stop()  # Hindari double form submit
+        st.stop()  # Form clear dan refresh
 
 # Update session state agar tetap sync dengan pilihan user
 if st.session_state["jurusan_selected"] != jurusan_selected:
