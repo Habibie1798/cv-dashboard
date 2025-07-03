@@ -11,6 +11,8 @@ if "jurusan_options" not in st.session_state:
     ]
 if "jurusan_selected" not in st.session_state:
     st.session_state.jurusan_selected = []
+if "last_manual_key" not in st.session_state:
+    st.session_state.last_manual_key = 0
 
 # --- Multiselect jurusan
 jurusan_selected = st.multiselect(
@@ -22,14 +24,14 @@ jurusan_selected = st.multiselect(
 
 # --- Tambah jurusan manual JIKA "Other (isi manual)" dipilih
 if "Other (isi manual)" in jurusan_selected:
+    key_manual = f"jurusan_manual_{st.session_state.last_manual_key}"
     jurusan_manual = st.text_input(
         "Masukkan jurusan lain, lalu klik Tambah/Enter",
-        key="jurusan_manual"
+        key=key_manual
     )
     if st.button("Tambah jurusan manual"):
         jur_baru = jurusan_manual.strip()
         if jur_baru and (jur_baru not in st.session_state.jurusan_options) and jur_baru != "Other (isi manual)":
-            # Tambahkan ke list jurusan, tapi "Other (isi manual)" tetap ada
             st.session_state.jurusan_options.insert(
                 len(st.session_state.jurusan_options) - 1, jur_baru
             )
@@ -38,7 +40,7 @@ if "Other (isi manual)" in jurusan_selected:
             new_selected.append(jur_baru)
             st.session_state.jurusan_selected = new_selected
             st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
-            st.experimental_rerun()  # Ini saja cukup, tidak perlu reset session_state jurusan_manual
+            st.session_state.last_manual_key += 1  # Ganti key input, field jadi auto kosong
         elif not jur_baru:
             st.warning("Input jurusan tidak boleh kosong.")
         else:
