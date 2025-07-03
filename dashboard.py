@@ -3,47 +3,49 @@ import requests
 
 st.title("Upload CV & Screening")
 
-# --- Session state untuk jurusan (stabil tanpa rerun)
+# --- List jurusan dan session state
+JURUSAN_DEFAULT = [
+    "Business Management", "Accounting", "Computer Science", "Engineering",
+    "Law", "Psychology", "Communication"
+]
+
 if "jurusan_options" not in st.session_state:
-    st.session_state.jurusan_options = [
-        "Business Management", "Accounting", "Computer Science", "Engineering",
-        "Law", "Psychology", "Communication", "Other (isi manual)"
-    ]
+    st.session_state.jurusan_options = JURUSAN_DEFAULT.copy()
 if "jurusan_selected" not in st.session_state:
     st.session_state.jurusan_selected = []
+if "jurusan_manual_list" not in st.session_state:
+    st.session_state.jurusan_manual_list = []
 
-# --- Multiselect jurusan
-jurusan_selected = st.multiselect(
-    "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
-    st.session_state.jurusan_options,
-    default=st.session_state.jurusan_selected,
-    key="jurusan_multi"
-)
+# --- Checkbox list jurusan
+st.subheader("Pilih Jurusan")
+selected_jurusan = []
+for jurusan in st.session_state.jurusan_options:
+    cek = st.checkbox(jurusan, key=f"cek_{jurusan}", value=jurusan in st.session_state.jurusan_selected)
+    if cek:
+        selected_jurusan.append(jurusan)
 
-# --- Tambah jurusan manual jika pilih 'Other (isi manual)'
-if "Other (isi manual)" in jurusan_selected:
-    st.write("")
-    jurusan_manual = st.text_input("Masukkan jurusan lain, lalu klik Tambah/Enter", key="jurusan_manual")
-    tambah = st.button("Tambah jurusan manual", key="btn_tambah")
-    if tambah and jurusan_manual.strip():
+# --- Tambah jurusan manual
+with st.expander("Tambah Jurusan Lain (Manual)"):
+    jurusan_manual = st.text_input("Masukkan jurusan lain", key="jurusan_manual_input", value="")
+    if st.button("Tambah jurusan manual"):
         jur_baru = jurusan_manual.strip()
-        # Jangan duplikat dan jangan masukin "Other (isi manual)"
-        if jur_baru not in st.session_state.jurusan_options and jur_baru != "Other (isi manual)":
-            idx = st.session_state.jurusan_options.index("Other (isi manual)")
-            st.session_state.jurusan_options.insert(idx, jur_baru)
-        # Update selection: ganti "Other (isi manual)" dengan jur_baru
-        s = [j for j in jurusan_selected if j != "Other (isi manual)"]
-        s.append(jur_baru)
-        st.session_state.jurusan_selected = s
-        # Bersihkan input field manual
-        st.session_state.jurusan_manual = ""
-        st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan! Silakan pilih lagi jika ingin menambah jurusan lainnya.")
+        if jur_baru and jur_baru not in st.session_state.jurusan_options:
+            st.session_state.jurusan_options.append(jur_baru)
+            st.session_state.jurusan_manual_list.append(jur_baru)
+            st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
+            st.experimental_rerun()
+        elif jur_baru in st.session_state.jurusan_options:
+            st.warning("Jurusan sudah ada di list.")
+        else:
+            st.warning("Input jurusan tidak boleh kosong.")
 
-# --- Sinkronkan pilihan jurusan (selalu update)
-if set(st.session_state.jurusan_selected) != set(jurusan_selected):
-    st.session_state.jurusan_selected = jurusan_selected
+# --- Simpan selection jurusan di session state
+st.session_state.jurusan_selected = selected_jurusan
 
-# --- Input lain (tidak hilang saat input jurusan manual)
+# --- Upload CV
+uploaded_file = st.file_uploader("Upload CV (PDF)", type=["pdf"])
+
+# --- Input lain
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 
 jobrole_list = [
@@ -68,7 +70,7 @@ nilai_toefl = st.text_input("Nilai TOEFL Minimal (opsional)")
 
 if st.button("Screening", key="btn_screening"):
     if uploaded_file is not None:
-        jurusan_final = [j for j in st.session_state.jurusan_selected if j != "Other (isi manual)"]
+        jurusan_final = st.session_state.jurusan_selected
         files = {
             "cv-file": (uploaded_file.name, uploaded_file, "application/pdf")
         }
@@ -83,15 +85,18 @@ if st.button("Screening", key="btn_screening"):
             "lokasi": lokasi,
             "nilai_toefl": nilai_toefl
         }
-        res = requests.post(
-            "https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer",
-            files=files, data=data
-        )
-        if res.ok:
-            hasil = res.json()
-            st.success("Hasil Screening:")
-            st.write(hasil.get("hasil_screening", hasil))
-        else:
-            st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
+        try:
+            res = requests.post(
+                "https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer",
+                files=files, data=data
+            )
+            if res.ok:
+                hasil = res.json()
+                st.success("Hasil Screening:")
+                st.write(hasil.get("hasil_screening", hasil))
+            else:
+                st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
+        except Exception as e:
+            st.error(f"Terjadi error saat screening: {e}")
     else:
         st.warning("Mohon upload file CV dulu.")
