@@ -8,29 +8,22 @@ uploaded_file = st.file_uploader("Upload CV (PDF)")
 # --- IPK (bisa klik panah, default 3.00, min 0, max 4, step 0.01)
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 
-# --- Jurusan (multi-select + custom)
+# --- Jurusan multiselect + ketik manual
 jurusan_list = [
     "Business Management", "Accounting", "Computer Science", "Engineering",
-    "Law", "Psychology", "Communication", "Other (isi manual)"
+    "Law", "Psychology", "Communication"
 ]
-jurusan_multi = st.multiselect(
-    "Jurusan (bisa pilih lebih dari 1)",
-    jurusan_list,
+jurusan_selected = st.multiselect(
+    "Jurusan (bisa pilih lebih dari 1, atau ketik sendiri lalu enter)",
+    options=jurusan_list,
     default=[]
 )
-
-# Input manual jika pilih 'Other (isi manual)'
-jurusan_lain = ""
-if "Other (isi manual)" in jurusan_multi:
-    jurusan_lain = st.text_input("Tambahkan jurusan lain (pisahkan koma jika lebih dari 1)")
-
-# Gabungkan semua jurusan ke satu list
-jurusan_hr = [j for j in jurusan_multi if j != "Other (isi manual)"]
-if jurusan_lain:
-    jurusan_hr += [j.strip() for j in jurusan_lain.split(",") if j.strip()]
-
-# Ubah ke string (biar gampang, nanti di n8n bisa split atau langsung pakai LLM prompt)
-jurusan_hr_str = ", ".join(jurusan_hr)
+other_jurusan = st.text_input("Tambahkan jurusan lain (pisahkan koma jika lebih dari 1, tekan enter)")
+all_jurusan = jurusan_selected.copy()
+if other_jurusan.strip():
+    all_jurusan += [j.strip() for j in other_jurusan.split(",") if j.strip()]
+# Hilangkan duplikat & urutkan
+all_jurusan = sorted(list(set(all_jurusan)))
 
 # --- Job Role (dropdown + custom)
 jobrole_list = [
@@ -59,9 +52,11 @@ if st.button("Screening"):
         files = {
             "cv-file": (uploaded_file.name, uploaded_file, "application/pdf")
         }
+        # Gabung jurusan array jadi string dipisah koma (atau bisa kirim array jika backend support)
+        jurusan_hr = ', '.join(all_jurusan) if all_jurusan else ""
         data = {
             "ipk_min": str(ipk),
-            "jurusan_hr": jurusan_hr_str,   # multi-jurusan dipisah koma
+            "jurusan_hr": jurusan_hr,
             "job_role": job_role,
             "min_years_exp": str(min_years_exp),
             "max_age": str(max_age),
