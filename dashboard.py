@@ -5,7 +5,6 @@ st.title("Upload CV & Screening")
 
 uploaded_file = st.file_uploader("Upload CV (PDF)")
 
-# --- Inisialisasi session_state untuk jurusan
 if "jurusan_options" not in st.session_state:
     st.session_state["jurusan_options"] = [
         "Business Management", "Accounting", "Computer Science", "Engineering",
@@ -14,37 +13,30 @@ if "jurusan_options" not in st.session_state:
 if "jurusan_selected" not in st.session_state:
     st.session_state["jurusan_selected"] = []
 
-# --- Multiselect jurusan
 jurusan_selected = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
     st.session_state["jurusan_options"],
     default=st.session_state["jurusan_selected"]
 )
 
-# --- Input manual jika 'Other' dipilih
 show_manual = "Other (isi manual)" in jurusan_selected
 if show_manual:
     jurusan_manual = st.text_input("Masukkan jurusan lain, lalu klik Tambah/Enter", key="manual_input")
     tambah = st.button("Tambah jurusan manual")
     if tambah and jurusan_manual.strip():
-        # Cek duplikat
         jur_baru = jurusan_manual.strip()
         if jur_baru not in st.session_state["jurusan_options"]:
             idx = st.session_state["jurusan_options"].index("Other (isi manual)")
             st.session_state["jurusan_options"].insert(idx, jur_baru)
-        # Tambahkan ke selected (ganti Other dengan yang baru)
         jurusan_selected = [j for j in jurusan_selected if j != "Other (isi manual)"] + [jur_baru]
         st.session_state["jurusan_selected"] = jurusan_selected
-        # Reset input manual, hilangkan field input setelah submit
-        st.session_state["manual_input"] = ""
         st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
-        st.experimental_rerun()  # auto-refresh supaya input manual hilang
+        st.experimental_rerun()  # biar input field hilang
 
-# Update session state setiap ada perubahan multiselect
 if st.session_state["jurusan_selected"] != jurusan_selected:
     st.session_state["jurusan_selected"] = jurusan_selected
 
-# --- Input field lain, TETAP TAMPIL tidak hilang!
+# --- Input lain tetap tampil normal
 ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
