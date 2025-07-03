@@ -28,26 +28,23 @@ if "Other (isi manual)" in jurusan_selected:
     )
     if st.button("Tambah jurusan manual"):
         jur_baru = jurusan_manual.strip()
-        # Cek jurusan valid dan tidak duplikat (dan bukan 'Other (isi manual)')
         if jur_baru and (jur_baru not in st.session_state.jurusan_options) and jur_baru != "Other (isi manual)":
             # Tambahkan ke list jurusan, tapi "Other (isi manual)" tetap ada
             st.session_state.jurusan_options.insert(
                 len(st.session_state.jurusan_options) - 1, jur_baru
             )
-            # Update selected: hapus 'Other' dan tambahkan jur_baru
+            # Update selected: hapus 'Other', tambah jur_baru
             new_selected = [j for j in jurusan_selected if j != "Other (isi manual)"]
             new_selected.append(jur_baru)
             st.session_state.jurusan_selected = new_selected
             st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
-            # Reset field manual
-            st.session_state["jurusan_manual"] = ""
-            st.experimental_rerun()
+            st.experimental_rerun()  # Ini saja cukup, tidak perlu reset session_state jurusan_manual
         elif not jur_baru:
             st.warning("Input jurusan tidak boleh kosong.")
         else:
             st.warning("Jurusan sudah ada di daftar.")
 
-# --- Sinkronisasi selection
+# --- Sinkronisasi selection (biar multiselect selalu update)
 if set(jurusan_selected) != set(st.session_state.jurusan_selected):
     st.session_state.jurusan_selected = jurusan_selected
 
