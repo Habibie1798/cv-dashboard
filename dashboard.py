@@ -5,10 +5,7 @@ st.title("Upload CV & Screening")
 
 uploaded_file = st.file_uploader("Upload CV (PDF)")
 
-# IPK
-ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
-
-# --- Inisialisasi session_state
+# --- Inisialisasi session_state untuk jurusan
 if "jurusan_options" not in st.session_state:
     st.session_state["jurusan_options"] = [
         "Business Management", "Accounting", "Computer Science", "Engineering",
@@ -21,32 +18,34 @@ if "jurusan_selected" not in st.session_state:
 jurusan_selected = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
     st.session_state["jurusan_options"],
-    default=st.session_state["jurusan_selected"],
-    key="jurusan_multiselect"
+    default=st.session_state["jurusan_selected"]
 )
 
-# --- Input manual jika Other dipilih
-if "Other (isi manual)" in jurusan_selected:
-    with st.form("manual_jurusan_form", clear_on_submit=True):
-        jurusan_manual = st.text_input("Masukkan jurusan lain, lalu klik Tambah/Enter")
-        submit_manual = st.form_submit_button("Tambah")
-    if submit_manual and jurusan_manual.strip():
-        # Cek tidak duplikat di opsi maupun di terpilih
-        if jurusan_manual.strip() not in st.session_state["jurusan_options"]:
+# --- Input manual jika 'Other' dipilih
+show_manual = "Other (isi manual)" in jurusan_selected
+if show_manual:
+    jurusan_manual = st.text_input("Masukkan jurusan lain, lalu klik Tambah/Enter", key="manual_input")
+    tambah = st.button("Tambah jurusan manual")
+    if tambah and jurusan_manual.strip():
+        # Cek duplikat
+        jur_baru = jurusan_manual.strip()
+        if jur_baru not in st.session_state["jurusan_options"]:
             idx = st.session_state["jurusan_options"].index("Other (isi manual)")
-            st.session_state["jurusan_options"].insert(idx, jurusan_manual.strip())
-        if jurusan_manual.strip() not in st.session_state["jurusan_selected"]:
-            st.session_state["jurusan_selected"].append(jurusan_manual.strip())
-        if "Other (isi manual)" in st.session_state["jurusan_selected"]:
-            st.session_state["jurusan_selected"].remove("Other (isi manual)")
-        st.success(f"Jurusan '{jurusan_manual.strip()}' berhasil ditambahkan!")
-        st.stop()  # Form clear dan refresh
+            st.session_state["jurusan_options"].insert(idx, jur_baru)
+        # Tambahkan ke selected (ganti Other dengan yang baru)
+        jurusan_selected = [j for j in jurusan_selected if j != "Other (isi manual)"] + [jur_baru]
+        st.session_state["jurusan_selected"] = jurusan_selected
+        # Reset input manual, hilangkan field input setelah submit
+        st.session_state["manual_input"] = ""
+        st.success(f"Jurusan '{jur_baru}' berhasil ditambahkan!")
+        st.experimental_rerun()  # auto-refresh supaya input manual hilang
 
-# Update session state agar tetap sync dengan pilihan user
+# Update session state setiap ada perubahan multiselect
 if st.session_state["jurusan_selected"] != jurusan_selected:
     st.session_state["jurusan_selected"] = jurusan_selected
 
-# --- Job Role (dropdown + custom)
+# --- Input field lain, TETAP TAMPIL tidak hilang!
+ipk = st.number_input("IPK Minimal", min_value=0.00, max_value=4.00, value=3.00, step=0.01, format="%.2f")
 jobrole_list = [
     "Finance", "Product Manager", "Software Engineer", "Data Analyst",
     "HR", "Marketing", "Other"
@@ -54,7 +53,6 @@ jobrole_list = [
 job_role_select = st.selectbox("Job Role", jobrole_list)
 job_role = st.text_input("Job Role (isi jika pilih 'Other')") if job_role_select == "Other" else job_role_select
 
-# --- Lokasi (dropdown + custom)
 lokasi_list = [
     "Jakarta", "Bandung", "Surabaya", "Yogyakarta", "Remote", "Other"
 ]
