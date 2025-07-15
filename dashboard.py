@@ -14,7 +14,6 @@ if "jurusan_selected" not in st.session_state:
 if "jurusan_manual_key" not in st.session_state:
     st.session_state.jurusan_manual_key = 0
 
-# --- Multiselect jurusan
 jurusan_selected = st.multiselect(
     "Jurusan (bisa pilih lebih dari 1, pilih 'Other (isi manual)' jika tidak ada di list)",
     options=st.session_state.jurusan_options,
@@ -22,7 +21,6 @@ jurusan_selected = st.multiselect(
     key="jurusan_multi"
 )
 
-# --- Tambah jurusan manual jika 'Other' dipilih
 if "Other (isi manual)" in jurusan_selected:
     jurusan_manual = st.text_input(
         "Masukkan jurusan lain, lalu klik Tambah/Enter",
@@ -30,7 +28,6 @@ if "Other (isi manual)" in jurusan_selected:
     )
     if st.button("Tambah jurusan manual"):
         jur_baru = jurusan_manual.strip()
-        # Cek valid dan tidak duplikat, dan bukan 'Other'
         if jur_baru and jur_baru not in st.session_state.jurusan_options and jur_baru != "Other (isi manual)":
             idx = st.session_state.jurusan_options.index("Other (isi manual)")
             st.session_state.jurusan_options.insert(idx, jur_baru)
@@ -49,7 +46,6 @@ if set(jurusan_selected) != set(st.session_state.jurusan_selected):
 
 uploaded_file = st.file_uploader("Upload CV (PDF)", type=["pdf"])
 
-# === Tambahan INPUT PENTING ===
 scope_of_work = st.text_area(
     "Deskripsi Lengkap Scope of Work / Job Description",
     help="Masukkan uraian tugas/jobdesc dari role yang akan di-screening"
@@ -100,7 +96,6 @@ if st.button("Screening", key="btn_screening"):
                 "skill_wajib": skill_wajib,
                 "lokasi": lokasi,
                 "nilai_toefl": nilai_toefl,
-                # ======== Tambahan dua field WAJIB =========
                 "scope_of_work": scope_of_work.strip(),
                 "qualification": qualification.strip(),
             }
@@ -112,7 +107,25 @@ if st.button("Screening", key="btn_screening"):
                 if res.ok:
                     hasil = res.json()
                     st.success("Hasil Screening:")
-                    st.write(hasil.get("hasil_screening", hasil))
+
+                    # --- Tampilkan hasil dengan layout rapi
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**Status Akhir:** `{hasil.get('status', '-')}`")
+                        st.markdown(f"**Persentase Kecocokan:** `{hasil.get('persentase', '-')}`%")
+                        st.markdown(f"**Penjelasan Singkat:** {hasil.get('penjelasan', '-')}")
+                    with col2:
+                        st.markdown("**Scope of Work:**")
+                        st.info(hasil.get("evaluasi_scope", "-"))
+
+                    st.markdown("---")
+                    st.markdown("**Evaluasi Qualification:**")
+                    st.info(hasil.get("evaluasi_qualification", "-"))
+
+                    # Kalau mau tampilkan semua blok asli:
+                    with st.expander("Lihat Detail Output Full (original dari LLM)"):
+                        st.code(hasil.get("hasil_screening_full", "-"))
+
                 else:
                     st.error(f"Gagal screening. Status: {res.status_code}, Detail: {res.text}")
             except Exception as e:
