@@ -54,6 +54,22 @@ if st.button("Screening Semua CV", key="btn_screening_multi"):
         st.warning("Mohon isi minimal 1 Qualification!")
     else:
         st.info("Screening berjalan... Mohon tunggu hasil tiap CV muncul di bawah.")
+
+        # --- Print DEBUG data yang dikirim (untuk memastikan field tidak kosong)
+        st.write("DEBUG Payload yang dikirim (untuk 1 CV):")
+        st.code({
+            "ipk_min": str(ipk),
+            "job_role": job_role.strip(),
+            "min_years_exp": str(min_years_exp),
+            "max_age": str(max_age),
+            "sertifikasi_wajib": sertifikasi_wajib.strip(),
+            "skill_wajib": skill_wajib.strip(),
+            "lokasi": lokasi.strip(),
+            "nilai_toefl": nilai_toefl.strip(),
+            "scope_of_work": scope_of_work.strip(),
+            "qualification": qualification.strip(),
+        })
+
         for uploaded_file in uploaded_files:
             with st.spinner(f"Screening: {uploaded_file.name} ..."):
                 files = {
