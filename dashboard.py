@@ -41,14 +41,16 @@ lokasi_list = [
 lokasi_select = st.selectbox("Lokasi (opsional)", lokasi_list)
 lokasi = st.text_input("Lokasi (isi jika pilih 'Other', boleh kosong)", key="lokasi_manual") if lokasi_select == "Other" else lokasi_select
 
+# --- Tombol screening dengan validasi input wajib
 if st.button("Screening Semua CV", key="btn_screening_multi"):
-    if not uploaded_files:
-        st.warning("Mohon upload minimal satu file CV.")
-    elif not job_role.strip():
+    # Validasi field wajib
+    if not uploaded_files or len(uploaded_files) == 0:
+        st.warning("Mohon upload minimal satu file CV (PDF).")
+    elif not job_role or not job_role.strip():
         st.warning("Mohon pilih atau isi job role.")
-    elif not scope_of_work.strip():
+    elif not scope_of_work or not scope_of_work.strip():
         st.warning("Mohon isi Scope of Work / Jobdesc.")
-    elif not qualification.strip():
+    elif not qualification or not qualification.strip():
         st.warning("Mohon isi minimal 1 Qualification!")
     else:
         st.info("Screening berjalan... Mohon tunggu hasil tiap CV muncul di bawah.")
@@ -59,13 +61,13 @@ if st.button("Screening Semua CV", key="btn_screening_multi"):
                 }
                 data = {
                     "ipk_min": str(ipk),
-                    "job_role": job_role,
+                    "job_role": job_role.strip(),
                     "min_years_exp": str(min_years_exp),
                     "max_age": str(max_age),
-                    "sertifikasi_wajib": sertifikasi_wajib,
-                    "skill_wajib": skill_wajib,
-                    "lokasi": lokasi,
-                    "nilai_toefl": nilai_toefl,
+                    "sertifikasi_wajib": sertifikasi_wajib.strip(),
+                    "skill_wajib": skill_wajib.strip(),
+                    "lokasi": lokasi.strip(),
+                    "nilai_toefl": nilai_toefl.strip(),
                     "scope_of_work": scope_of_work.strip(),
                     "qualification": qualification.strip(),
                 }
