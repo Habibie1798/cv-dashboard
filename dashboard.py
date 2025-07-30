@@ -89,7 +89,7 @@ if st.button("Screening Semua CV", key="btn_screening_multi"):
                 }
                 try:
                     res = requests.post(
-                        "https://talentdna.lintasarta.net/n8n/webhook-test/cv-analyzer",
+                        "https://talentdna.lintasarta.net/n8n/webhook/cv-analyzer",
                         files=files, data=data
                     )
                     if res.ok:
